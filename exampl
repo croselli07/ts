@@ -1,0 +1,63 @@
+
+float sensibilidad = 0.185; 
+float ruido = 0.070;	
+const int sensorIntensidad = A0; 
+float valorReposo = 2.5097;
+float intensidadPico = 0;
+float tensionDeRed = 230.0;
+float acumFrec = 0; //acumulado segun la frecuencia de envio 
+
+void setup() {
+	Serial.begin(9600);			
+}
+
+void loop() {
+	
+	// Intero segun la frecuencia de envio del aparato 
+	for (int min = 0; min < frequency ; min++) { 
+
+	acumFrec = acumFrec + leerCorriente();	//Leemos corriente.
+	
+	}
+	
+	potAEnviar= acumFrec/frequency;
+	
+	mostrarValores();
+}
+
+float leerCorriente() {
+
+	float valorVoltajeSensor;
+	float corriente = 0;
+	long tiempo = millis();
+	float intensidadMaxima = 0;
+	float intensidadMinima = 0;
+	float acumMin=0; 
+
+	for (int min = 0; min < 60; min++) {  // Realizo 60 mediciones en 1 minuto
+  
+
+		while (millis() - tiempo < 1000)//realizamos mediciones durante 0.5 segundos
+		{
+			valorVoltajeSensor = analogRead(sensorIntensidad)*(5.0 / 1023.0); //lectura del sensor en voltios
+			corriente = 0.9*corriente + 0.1*((valorVoltajeSensor - valorReposo) / sensibilidad);//Ecucacion para obtener la corriente
+			if (corriente > intensidadMaxima) intensidadMaxima = corriente;
+			if (corriente < intensidadMinima) intensidadMinima = corriente;
+		}
+		
+		acumMin= acumMin + ((intensidadMaxima-intensidadMinima)/2)-ruido;
+		return(acumMin/60); // Devuelvo el promedio en las 60 mediciones hechas en 1 min
+	}
+}
+
+void mostrarValores() {
+
+	float Irms = intensidadPico*0.707;
+	Serial.print("Intensidad Pico:");
+	Serial.print(intensidadPico, 3);
+	Serial.print("A , Irms: ");
+	Serial.print(Irms, 3);
+	Serial.print("A. ");
+	Serial.print("\n");
+
+	delay(100);
